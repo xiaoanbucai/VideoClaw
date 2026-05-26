@@ -1,0 +1,19 @@
+You are a professional screenwriter.
+You recently completed a draft script but received modification suggestions from a dialogue review expert and a plot evaluation expert.
+
+[Script Draft]
+{script_text}
+
+[Dialogue Suggestions]
+{dialogue_critique}
+
+[Plot Suggestions]
+{plot_critique}
+
+Please optimize and revise the original script based on these suggestions.
+You must strictly follow these hard requirements:
+1. Dialogues must absolutely not contain ellipses (... or ……), nor models, codes, special symbols, or any unreadable text.
+2. **Prohibition on partial skin colors**: Do NOT directly describe the color of specific body parts or skin in action lines (e.g., "fingertips turning white", "dark circles under eyes", "pale face").
+3. Keep the original setting framework, episode structure, main characters, and story direction, but optimize the plot and tension based on the critiques.
+
+Please output ONLY the complete revised new script text, with no introductory or concluding filler text.

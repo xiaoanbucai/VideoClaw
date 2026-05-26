@@ -1,0 +1,8 @@
+【剧本草稿】
+{script_text}
+
+【台词修改意见】
+{dialogue_critique}
+
+【情节修改意见】
+{plot_critique}
