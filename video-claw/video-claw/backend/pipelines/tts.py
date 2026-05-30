@@ -13,7 +13,7 @@ async def generate_edge_tts(
     text: str,
     output_path: str,
     voice: str = "zh-CN-YunjianNeural",
-    speed: float = 1.2,
+    speed: float = 1.0,
 ) -> str:
     try:
         import edge_tts
