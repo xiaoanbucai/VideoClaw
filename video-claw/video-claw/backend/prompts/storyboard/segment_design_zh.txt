@@ -21,11 +21,15 @@
 4. 本片段第一个分镜必须是“中景”或“全景”，拍摄位置必须是“平视”，能同时拍到这个片段中的所有人物，并描述所有人物站位。
 5. 每个 content 都必须包含拍摄位置：相机从什么角度拍摄，人物朝向在画面中怎样。
 6. 动作/台词必须保留原文，不要改写；可以在 content 中补充镜头调度，但原文必须完整出现。
-7. 风格参考：{style}。
+7. 场景空间必须严格遵守 scene_context 中的“内/外”。如果 scene_space 是“外”，所有镜头都必须是外景，不得写“室内、内景、房间内、帐篷内、营帐内、帐内”等内景表达；如果 scene_space 是“内”，不得写“室外、户外、露天、外景、帐外、门外”等外景表达。
+8. 风格参考：{style}。
 
 {retry_feedback}
 
 片段信息：
+scene_context: {scene_context}
+scene_time: {scene_time}
+scene_space: {scene_space}
 location: {location}
 characters: {characters}
 total_duration: {total_duration}
