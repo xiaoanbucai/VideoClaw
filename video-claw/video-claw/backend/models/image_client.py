@@ -40,30 +40,51 @@ class ImageClient:
         Unified Image Generation Client
         Routes requests to DashScope, Seedream, or GPT based on model name.
         """
-        # Initialize DashScope Client
-        self.dashscope_client = DashScopeClient(
-            api_key=dashscope_api_key,
-            base_url=dashscope_base_url
-        )
+        self._dashscope_api_key = dashscope_api_key
+        self._dashscope_base_url = dashscope_base_url
+        self._ark_api_key = ark_api_key
+        self._ark_base_url = ark_base_url
+        self._gpt_api_key = gpt_api_key
+        self._gpt_base_url = gpt_base_url
+        self._proxy = Config.provider_proxy("openai") if proxy is None else proxy
 
-        # Initialize Seedream Client
-        self.seedream_client = SeedreamClient(
-            api_key=ark_api_key,
-            base_url=ark_base_url
-        )
-
-        # Initialize GPT Image Client
-        self.gpt_client = ImageGPT(
-            api_key=gpt_api_key,
-            base_url=gpt_base_url,
-            proxy=Config.provider_proxy("openai") if proxy is None else proxy
-        )
+        self._dashscope_client = None
+        self._seedream_client = None
+        self._gpt_client = None
 
         # Initialize Image Processor for downloads
         self.image_processor = ImageProcessor()
 
         # Default save directory
         self.base_save_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "code", "result", "image_client")
+
+    @property
+    def dashscope_client(self):
+        if self._dashscope_client is None:
+            self._dashscope_client = DashScopeClient(
+                api_key=self._dashscope_api_key,
+                base_url=self._dashscope_base_url,
+            )
+        return self._dashscope_client
+
+    @property
+    def seedream_client(self):
+        if self._seedream_client is None:
+            self._seedream_client = SeedreamClient(
+                api_key=self._ark_api_key,
+                base_url=self._ark_base_url,
+            )
+        return self._seedream_client
+
+    @property
+    def gpt_client(self):
+        if self._gpt_client is None:
+            self._gpt_client = ImageGPT(
+                api_key=self._gpt_api_key,
+                base_url=self._gpt_base_url,
+                proxy=self._proxy,
+            )
+        return self._gpt_client
 
     def generate_image(self,
                        prompt: str,

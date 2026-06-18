@@ -27,13 +27,59 @@ logger = logging.getLogger(__name__)
 
 class LLM:
     def __init__(self, gemini_base_url="", gemini_api_key="", gpt_base_url="", gpt_api_key="", deepseek_base_url="", deepseek_api_key="", dashscope_api_key=""):
-        self.gemini_base_url = gemini_base_url or Config.GOOGLE_GEMINI_BASE_URL
-        self.gemini_api_key = gemini_api_key or Config.GEMINI_API_KEY
-        self.gpt_base_url = gpt_base_url or Config.OPENAI_BASE_URL
-        self.gpt_api_key = gpt_api_key or Config.OPENAI_API_KEY
-        self.deepseek_base_url = deepseek_base_url or Config.DEEPSEEK_BASE_URL
-        self.deepseek_api_key = deepseek_api_key or Config.DEEPSEEK_API_KEY
-        self.dashscope_api_key = dashscope_api_key or Config.DASHSCOPE_API_KEY
+        self._gemini_base_url = gemini_base_url or Config.GOOGLE_GEMINI_BASE_URL
+        self._gemini_api_key = gemini_api_key or Config.GEMINI_API_KEY
+        self._gpt_base_url = gpt_base_url or Config.OPENAI_BASE_URL
+        self._gpt_api_key = gpt_api_key or Config.OPENAI_API_KEY
+        self._deepseek_base_url = deepseek_base_url or Config.DEEPSEEK_BASE_URL
+        self._deepseek_api_key = deepseek_api_key or Config.DEEPSEEK_API_KEY
+        self._dashscope_api_key = dashscope_api_key or Config.DASHSCOPE_API_KEY
+
+        self._gemini_client = None
+        self._gpt_client = None
+        self._deepseek_client = None
+        self._dashscope_client = None
+        self._dashscope_vl_client = None
+
+    @property
+    def gemini_client(self):
+        if self._gemini_client is None:
+            self._gemini_client = Gemini(
+                base_url=self._gemini_base_url,
+                api_key=self._gemini_api_key,
+            )
+        return self._gemini_client
+
+    @property
+    def gpt_client(self):
+        if self._gpt_client is None:
+            self._gpt_client = GPT(
+                base_url=self._gpt_base_url,
+                api_key=self._gpt_api_key,
+                proxy=Config.provider_proxy("openai"),
+            )
+        return self._gpt_client
+
+    @property
+    def deepseek_client(self):
+        if self._deepseek_client is None:
+            self._deepseek_client = DeepSeek(
+                base_url=self._deepseek_base_url,
+                api_key=self._deepseek_api_key,
+            )
+        return self._deepseek_client
+
+    @property
+    def dashscope_client(self):
+        if self._dashscope_client is None:
+            self._dashscope_client = QwenLLM(api_key=self._dashscope_api_key)
+        return self._dashscope_client
+
+    @property
+    def dashscope_vl_client(self):
+        if self._dashscope_vl_client is None:
+            self._dashscope_vl_client = QwenVLClient(api_key=self._dashscope_api_key)
+        return self._dashscope_vl_client
 
     def full_to_half(self, text):
         if not isinstance(text, str):
@@ -78,32 +124,22 @@ class LLM:
         result = ""
         model_lower = model.lower()
         if model_lower.startswith("gemini"):
-            client = Gemini(base_url=self.gemini_base_url, api_key=self.gemini_api_key)
-            result = client.query(prompt, image_urls=image_urls, model=model)
+            result = self.gemini_client.query(prompt, image_urls=image_urls, model=model)
         elif "gpt" in model_lower:
             # OpenAI series models
-            client = GPT(
-                base_url=self.gpt_base_url, 
-                api_key=self.gpt_api_key, 
-                proxy=Config.provider_proxy("openai"),
-            )
-            result = client.query(prompt, image_urls=image_urls, model=model, web_search=web_search)
+            result = self.gpt_client.query(prompt, image_urls=image_urls, model=model, web_search=web_search)
         elif "kimi" in model_lower or "qwen3.6-plus" in model_lower or "qwen3.6-flash" in model_lower or "vl" in model_lower:
             # DashScope VLM models (using MultiModalConversation API)
-            dashscope_vl_client = QwenVLClient(api_key=self.dashscope_api_key)
-            result = dashscope_vl_client.chat(text=prompt, images=image_urls, model=model, stream=False)
+            result = self.dashscope_vl_client.chat(text=prompt, images=image_urls, model=model, stream=False)
         elif "deepseek-v3.2" in model_lower:
             # DeepSeek v3.2 (通过 DashScope Generation API)
-            client = QwenLLM(api_key=self.dashscope_api_key)
-            result = client.query(prompt, image_urls=image_urls, model=model, web_search=web_search)
+            result = self.dashscope_client.query(prompt, image_urls=image_urls, model=model, web_search=web_search)
         elif model_lower.startswith("deepseek") and "v3.2" not in model_lower:
             # Original DeepSeek provider
-            client = DeepSeek(base_url=self.deepseek_base_url, api_key=self.deepseek_api_key)
-            result = client.query(prompt, image_urls=image_urls, model=model, web_search=web_search)
+            result = self.deepseek_client.query(prompt, image_urls=image_urls, model=model, web_search=web_search)
         else:
             # Default to Qwen models / deepseek-v3.2 via DashScope Generation API
-            client = QwenLLM(api_key=self.dashscope_api_key)
-            result = client.query(prompt, image_urls=image_urls, model=model, web_search=web_search)
+            result = self.dashscope_client.query(prompt, image_urls=image_urls, model=model, web_search=web_search)
 
         if safe_content:
             result = self.full_to_half(result)

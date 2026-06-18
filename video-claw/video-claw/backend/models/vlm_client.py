@@ -36,22 +36,45 @@ class VLM:
         Unified VLM (Vision Language Model) Client
         Routes requests to DashScope (QwenVL) or Gemini based on model name.
         """
-        # Initialize DashScope Client
-        self.dashscope_client = QwenVLClient(
-            api_key=dashscope_api_key,
-            base_url=dashscope_base_url
-        )
-        # Initialize Gemini Client
-        self.gemini_client = GeminiVLClient(
-            api_key=gemini_api_key,
-            base_url=gemini_base_url
-        )
-        # Initialize GPT Client
-        self.gpt_client = GPTVLClient(
-            api_key=gpt_api_key,
-            base_url=gpt_base_url,
-            proxy=Config.provider_proxy("openai") if proxy is None else proxy
-        )
+        self._dashscope_api_key = dashscope_api_key
+        self._dashscope_base_url = dashscope_base_url
+        self._gemini_api_key = gemini_api_key
+        self._gemini_base_url = gemini_base_url
+        self._gpt_api_key = gpt_api_key
+        self._gpt_base_url = gpt_base_url
+        self._proxy = Config.provider_proxy("openai") if proxy is None else proxy
+
+        self._dashscope_client = None
+        self._gemini_client = None
+        self._gpt_client = None
+
+    @property
+    def dashscope_client(self):
+        if self._dashscope_client is None:
+            self._dashscope_client = QwenVLClient(
+                api_key=self._dashscope_api_key,
+                base_url=self._dashscope_base_url,
+            )
+        return self._dashscope_client
+
+    @property
+    def gemini_client(self):
+        if self._gemini_client is None:
+            self._gemini_client = GeminiVLClient(
+                api_key=self._gemini_api_key,
+                base_url=self._gemini_base_url,
+            )
+        return self._gemini_client
+
+    @property
+    def gpt_client(self):
+        if self._gpt_client is None:
+            self._gpt_client = GPTVLClient(
+                api_key=self._gpt_api_key,
+                base_url=self._gpt_base_url,
+                proxy=self._proxy,
+            )
+        return self._gpt_client
 
     def query(self,
              prompt: str,
