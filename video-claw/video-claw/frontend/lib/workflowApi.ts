@@ -7,7 +7,8 @@
  * the entire upstream response before forwarding, which breaks SSE real-time delivery.
  * Non-streaming endpoints can still go through the proxy (relative URL).
  */
-const STREAM_API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+export const DIRECT_API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const STREAM_API_BASE = DIRECT_API_BASE;
 
 export interface StageInfo {
   id: string;

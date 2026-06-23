@@ -5,7 +5,7 @@ import { Sparkles, Image, Video, MessageSquare, Zap, Loader2, Copy, Check, Trash
 import { useSearchParams } from 'next/navigation';
 import type { ModelOption, ProviderGroup } from '@/config/models';
 import BrandHeader from '@/components/BrandHeader';
-import { fetchSandboxTasks, uploadMedia } from '@/lib/workflowApi';
+import { DIRECT_API_BASE, fetchSandboxTasks, uploadMedia } from '@/lib/workflowApi';
 import { fetchModelGroupsByType } from '@/lib/modelRegistry';
 
 // 辅助函数：将相对路径转换为完整 URL
@@ -518,7 +518,9 @@ export default function SandboxPage() {
           body.image = imageUrl;
           break;
         case 'video':
-          apiUrl = '/api/sandbox/video';
+          // Video generation can run long enough for the Next.js rewrite proxy to abort
+          // while the FastAPI job still finishes. Call the API server directly.
+          apiUrl = `${DIRECT_API_BASE}/api/sandbox/video`;
           body.image = imageUrl;
           break;
       }
