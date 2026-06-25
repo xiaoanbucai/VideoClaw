@@ -654,6 +654,8 @@ class WorkflowEngine:
             return isinstance(intervention.get("regenerate_scenes"), list)
         if stage == WorkflowStage.VIDEO_GENERATION:
             return isinstance(intervention.get("regenerate_clips"), list)
+        if stage == WorkflowStage.POST_PRODUCTION:
+            return isinstance(intervention.get("regenerate_episodes"), list)
         return False
 
     @staticmethod
@@ -1121,7 +1123,11 @@ class WorkflowEngine:
                         item_id = incoming["id"]
                         current = current_by_id.get(item_id, {})
                         merged = {**current, **incoming}
-                        if current.get("selected") and not incoming.get("selected"):
+                        explicit_video_selection = (
+                            stage == "video_generation"
+                            and "selected" in incoming
+                        )
+                        if current.get("selected") and not incoming.get("selected") and not explicit_video_selection:
                             merged["selected"] = current.get("selected")
                         merged["versions"] = self._merge_asset_versions(
                             current.get("versions"),

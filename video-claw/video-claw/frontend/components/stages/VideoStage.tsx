@@ -156,6 +156,7 @@ function ClipRow({
   const isFailed = clip.status === 'failed' && !isRegenerating;
   const hasChanges = editDesc !== clip.description;
   const hasVideo = Boolean(clip.selected) || clip.versions.length > 0;
+  const isUnselectedCandidate = !clip.selected && clip.versions.length > 0;
   const canGenerateMissing = Boolean(allowMissingGenerate) && !hasVideo && !isRunning && !isRegenerating;
 
   return (
@@ -234,23 +235,31 @@ function ClipRow({
             <p className="text-xs text-gray-400 italic">无提示词</p>
           </div>
         )}
-        {/* 已有视频显示重新生成；失败/旧数据空资源允许补生成。 */}
-        {!isStageRunning && (hasVideo || isFailed || canGenerateMissing) && (
-          <button
-            onClick={onRegenerate}
-            disabled={disabled}
-            className={`mt-3 flex items-center gap-1.5 self-start px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              disabled
-                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                : isFailed
-                  ? 'text-red-600 bg-red-50 hover:bg-red-100'
-                  : 'text-rose-600 bg-rose-50 hover:bg-rose-100'
-            }`}
-          >
-            <RefreshCw className="w-3 h-3" />
-            {isFailed ? '点击重试' : hasVideo ? '重新生成' : '生成'}
-          </button>
-        )}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {/* 已有视频显示重新生成；失败/旧数据空资源允许补生成。 */}
+          {!isStageRunning && (hasVideo || isFailed || canGenerateMissing) && (
+            <button
+              onClick={onRegenerate}
+              disabled={disabled}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                disabled
+                  ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                  : isFailed
+                    ? 'text-red-600 bg-red-50 hover:bg-red-100'
+                    : 'text-rose-600 bg-rose-50 hover:bg-rose-100'
+              }`}
+            >
+              <RefreshCw className="w-3 h-3" />
+              {isFailed ? '点击重试' : hasVideo ? '重新生成' : '生成'}
+            </button>
+          )}
+          {isUnselectedCandidate && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] font-medium text-amber-700">
+              <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+              未选择片段，将在后期阶段跳过本片段
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 右侧: 视频画廊 / 占位 */}
@@ -494,24 +503,33 @@ export default function VideoStage({ state, sessionId, onConfirm, onIntervene, o
   };
 
   const handleSelectVersion = async (clipId: string, path: string) => {
-    setSelectedVersions(prev => ({ ...prev, [clipId]: path }));
+    const clip = clips.find(c => c.id === clipId);
+    const currentSelected = clip ? getSelected(clip) : '';
+    const nextSelected = currentSelected === path ? '' : path;
+    setSelectedVersions(prev => ({ ...prev, [clipId]: nextSelected }));
     // 同步更新 artifact 以便确认时能传递正确的选中片段给阶段6
     if (onUpdateArtifact && state.artifact?.clips) {
       const updatedClips = state.artifact.clips.map((c: ClipItem) =>
-        c.id === clipId ? { ...c, selected: path } : c
+        c.id === clipId ? { ...c, selected: nextSelected } : c
       );
       onUpdateArtifact({ clips: updatedClips });
     }
     // 自动保存选择
     const selections: Record<string, string> = {};
-    clips.forEach(c => { selections[c.id] = selectedVersions[c.id] || c.selected; });
-    selections[clipId] = path;
+    clips.forEach(c => {
+      selections[c.id] = Object.prototype.hasOwnProperty.call(selectedVersions, c.id)
+        ? selectedVersions[c.id]
+        : c.selected;
+    });
+    selections[clipId] = nextSelected;
     if (onSaveSelections) {
       await onSaveSelections(selections);
     }
   };
 
-  const getSelected = (clip: ClipItem) => selectedVersions[clip.id] || clip.selected;
+  const getSelected = (clip: ClipItem) => Object.prototype.hasOwnProperty.call(selectedVersions, clip.id)
+    ? selectedVersions[clip.id]
+    : clip.selected;
 
   return (
     <div className="flex flex-col h-full">
